@@ -1,11 +1,12 @@
-﻿using System.IO;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using Microsoft.Win32;
+using Brushes = System.Windows.Media.Brushes;
+using Forms = System.Windows.Forms;
+using Color = System.Windows.Media.Color;
+using MouseEventArgs = System.Windows.Input.MouseEventArgs;
+
 
 namespace RastrovyGrafickyEditor;
 
@@ -14,138 +15,145 @@ namespace RastrovyGrafickyEditor;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private Brush currentBrush = Brushes.Black;
-    private Point startPoint;
-    private bool isDrawingShape = false;
-
     public MainWindow()
     {
         InitializeComponent();
-        DrawingCanvas.DefaultDrawingAttributes.Color = Colors.Black;
-        DrawingCanvas.DefaultDrawingAttributes.Width = BrushSizeSlider.Value;
-        DrawingCanvas.DefaultDrawingAttributes.Height = BrushSizeSlider.Value;
+        
+        // Init shapes
+        ShapePicker.Items.Add(new ComboBoxItem { Content = "None", IsSelected = true});
+        foreach (var type in ShapeType.GetValues(typeof(ShapeType)))
+            ShapePicker.Items.Add(new ComboBoxItem { Content = type.ToString() });
+        
+        DrawingCanvas.DefaultDrawingAttributes.Width = Settings.thickness;
+        DrawingCanvas.DefaultDrawingAttributes.Height = Settings.thickness;
+        BrushSizeSlider.Value = Settings.thickness;
 
+        DrawingCanvas.DefaultDrawingAttributes.Color = Settings.borderColor;
+        BorderColorButton.BorderBrush = new SolidColorBrush(Settings.borderColor);
+        FillColorButton.Background = new SolidColorBrush(Settings.fillColor);
+        
+        // Handle thickness change
         BrushSizeSlider.ValueChanged += (s, e) =>
         {
-            DrawingCanvas.DefaultDrawingAttributes.Width = e.NewValue;
-            DrawingCanvas.DefaultDrawingAttributes.Height = e.NewValue;
+            Settings.thickness = e.NewValue;
+            DrawingCanvas.DefaultDrawingAttributes.Width = Settings.thickness;
+            DrawingCanvas.DefaultDrawingAttributes.Height = Settings.thickness;
         };
 
+        // Handle draw mode change
         ShapePicker.SelectionChanged += (s, e) =>
         {
-            DrawingCanvas.EditingMode = (ShapePicker.SelectedItem as ComboBoxItem)?.Content.ToString() == "None" ? InkCanvasEditingMode.Ink : InkCanvasEditingMode.None;
+            Settings.drawingMode = (ShapePicker.SelectedItem as ComboBoxItem)?.Content.ToString() == "None" ? DrawingMode.None : DrawingMode.Shape;
+            DrawingCanvas.EditingMode = Settings.drawingMode == DrawingMode.None ? InkCanvasEditingMode.Ink : InkCanvasEditingMode.None;
+        };
+        
+        this.SizeChanged += (s, e) =>
+        {
+            SizeLabel.Text = $"{Math.Floor(DrawingCanvas.ActualWidth)} x {Math.Floor(DrawingCanvas.ActualHeight)}";
         };
     }
-
-    private void ColorPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    
+    private void OpenColorPicker(object sender, RoutedEventArgs e)
     {
-        if (DrawingCanvas == null) return;
+        var colorDialog = new ColorDialog();
 
-        string color = (ColorPicker.SelectedItem as ComboBoxItem)?.Content.ToString();
-        if (color != null)
+        if (colorDialog.ShowDialog() == Forms.DialogResult.OK)
         {
-            Color selected = (Color)ColorConverter.ConvertFromString(color);
-            DrawingCanvas.DefaultDrawingAttributes.Color = selected;
-            currentBrush = new SolidColorBrush(selected);
+            // Convert the selected color to MediaColor
+            Color mediaColor = Color.FromArgb(colorDialog.Color.A, colorDialog.Color.R, colorDialog.Color.G, colorDialog.Color.B);
+            if (sender == BorderColorButton)
+            {
+                DrawingCanvas.DefaultDrawingAttributes.Color = mediaColor;
+                Settings.borderColor = mediaColor;
+                BorderColorButton.BorderBrush = new SolidColorBrush(mediaColor);
+            }
+            else if (sender == FillColorButton)
+            {
+                Settings.fillColor = mediaColor;
+                FillColorButton.Background = new SolidColorBrush(mediaColor);
+            }
         }
     }
 
-    private void DrawingCanvas_OnMouseDown(object sender, MouseButtonEventArgs e)
+    private void StartDrawing(object sender, MouseButtonEventArgs e)
     {
         string shape = (ShapePicker.SelectedItem as ComboBoxItem)?.Content.ToString();
         if (shape != "None")
         {
-            startPoint = e.GetPosition(DrawingCanvas);
-            isDrawingShape = true;
-            DrawingCanvas.MouseMove += DrawingCanvas_MouseMove_Shape;
-            DrawingCanvas.MouseUp += DrawingCanvas_MouseUp_Shape;
-        }
-    }
-
-    private void DrawingCanvas_MouseMove_Shape(object sender, MouseEventArgs e)
-    {
-        // Optional: live preview of shape while dragging (not implemented)
-    }
-
-    private void DrawingCanvas_MouseUp_Shape(object sender, MouseButtonEventArgs e)
-    {
-        DrawingCanvas.MouseMove -= DrawingCanvas_MouseMove_Shape;
-        DrawingCanvas.MouseUp -= DrawingCanvas_MouseUp_Shape;
-
-        Point endPoint = e.GetPosition(DrawingCanvas);
-        string shape = (ShapePicker.SelectedItem as ComboBoxItem)?.Content.ToString();
-
-        double x = Math.Min(startPoint.X, endPoint.X);
-        double y = Math.Min(startPoint.Y, endPoint.Y);
-        double width = Math.Abs(startPoint.X - endPoint.X);
-        double height = Math.Abs(startPoint.Y - endPoint.Y);
-
-        Shape element = null;
-        switch (shape)
-        {
-            case "Rectangle":
-                element = new Rectangle { Width = width, Height = height };
-                break;
-            case "Square":
-                double side = Math.Min(width, height);
-                element = new Rectangle { Width = side, Height = side };
-                break;
-            case "Ellipse":
-                element = new Ellipse { Width = width, Height = height };
-                break;
-        }
-
-        if (element != null)
-        {
-            element.Stroke = currentBrush;
-            element.StrokeThickness = BrushSizeSlider.Value;
-            Canvas.SetLeft(element, x);
-            Canvas.SetTop(element, y);
-            DrawingCanvas.Children.Add(element);
-        }
-
-        isDrawingShape = false;
-    }
-
-    private void SaveButton_Click(object sender, RoutedEventArgs e)
-    {
-        RenderTargetBitmap rtb = new RenderTargetBitmap((int)DrawingCanvas.ActualWidth, (int)DrawingCanvas.ActualHeight, 96d, 96d, PixelFormats.Default);
-        rtb.Render(DrawingCanvas);
-
-        SaveFileDialog save = new SaveFileDialog
-        {
-            Filter = "PNG Image|*.png"
-        };
-        if (save.ShowDialog() == true)
-        {
-            PngBitmapEncoder encoder = new PngBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(rtb));
-            using FileStream fs = new FileStream(save.FileName, FileMode.Create);
-            encoder.Save(fs);
-        }
-    }
-
-    private void LoadButton_Click(object sender, RoutedEventArgs e)
-    {
-        OpenFileDialog open = new OpenFileDialog
-        {
-            Filter = "PNG Image|*.png"
-        };
-        if (open.ShowDialog() == true)
-        {
-            Image img = new Image
+            Settings.currentShape = new DrawShape(
+                (ShapeType)Enum.Parse(typeof(ShapeType), shape!), 
+                DrawingCanvas, 
+                e.GetPosition(DrawingCanvas)
+            );
+            
+            void MouseMove(object sender, MouseEventArgs e)
             {
-                Source = new BitmapImage(new Uri(open.FileName)),
-                Width = DrawingCanvas.ActualWidth,
-                Height = DrawingCanvas.ActualHeight
-            };
-            DrawingCanvas.Children.Add(img);
+                Settings.currentShape.EndPoint = e.GetPosition(DrawingCanvas);
+                Settings.currentShape.Draw();
+            }
+            
+            void MouseUp(object sender, MouseButtonEventArgs e)
+            {
+                DrawingCanvas.MouseMove -= MouseMove;
+                DrawingCanvas.MouseUp -= MouseUp;
+
+                Settings.currentShape.EndPoint = e.GetPosition(DrawingCanvas);
+                Settings.currentShape.Draw();
+                
+                // Stop updating the shape
+                Settings.currentShape = null;
+            }
+
+            DrawingCanvas.MouseMove += MouseMove;
+            DrawingCanvas.MouseUp += MouseUp;
         }
     }
 
-    private void ClearButton_Click(object sender, RoutedEventArgs e)
+    private void Clear(object sender, RoutedEventArgs e)
     {
-        DrawingCanvas.Strokes.Clear();
-        DrawingCanvas.Children.Clear();
+        Files.Clear(DrawingCanvas);
+    }
+
+    private void Save(object sender, RoutedEventArgs e)
+    {
+        SaveFileDialog save = new SaveFileDialog { Filter = "PNG Image|*.png" };
+        
+        if (save.ShowDialog() == Forms.DialogResult.OK)
+            Files.Save(DrawingCanvas, save.FileName);
+    }
+
+    private void Load(object sender, RoutedEventArgs e)
+    {
+        if (!Files.Saved)
+        {
+            DialogResult result = Forms.MessageBox.Show(
+                "You have unsaved changes. Do you want to save them?",
+                "Unsaved Changes",
+                MessageBoxButtons.YesNoCancel,
+                MessageBoxIcon.Warning
+            );
+
+            if (result == Forms.DialogResult.Yes)
+                Save(sender, e);
+            else if (result == Forms.DialogResult.Cancel)
+                return;
+        }
+        
+        OpenFileDialog open = new OpenFileDialog { Filter = "PNG Image|*.png" };
+        
+        if (open.ShowDialog() == Forms.DialogResult.OK)
+            Files.Load(DrawingCanvas, open.FileName);
+    }
+
+    private void OnDraw(object sender, InkCanvasStrokeCollectedEventArgs e)
+    {
+        Files.Saved = false;
+    }
+
+    private void SetTransparentFill(object sender, RoutedEventArgs e)
+    {
+        Settings.fillColor = Settings.fillColor == Colors.Transparent ? Colors.DodgerBlue : Colors.Transparent;
+        FillColorButton.Visibility = Settings.fillColor == Colors.Transparent ? Visibility.Collapsed : Visibility.Visible;
+        TransparentFillIcon.Foreground = Settings.fillColor == Colors.Transparent ? Brushes.DodgerBlue : Brushes.White;
     }
 }

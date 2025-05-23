@@ -5,42 +5,332 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RastrovyGrafickyEditor"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        <DockPanel>
-            <!-- Horní Panel -->
-            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Background="#EEE" Margin="5">
-                <Label Content="Barva:" />
-                <ComboBox x:Name="ColorPicker" Width="100" SelectionChanged="ColorPicker_SelectionChanged">
-                    <ComboBoxItem Content="Black" IsSelected="True"/>
-                    <ComboBoxItem Content="Red"/>
-                    <ComboBoxItem Content="Green"/>
-                    <ComboBoxItem Content="Blue"/>
-                    <ComboBoxItem Content="Orange"/>
-                </ComboBox>
+        WindowStartupLocation="CenterScreen"
+        Title="MainWindow" Height="450" Width="900">
 
-                <Label Content="Tloušťka:" Margin="10,0,0,0"/>
-                <Slider x:Name="BrushSizeSlider" Minimum="1" Maximum="20" Width="100" Value="5" Margin="0,0,10,0"/>
+    <Window.Resources>
+        <ControlTemplate x:Key="NoMouseOverButtonTemplate"
+                         TargetType="ButtonBase">
+            <Border Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}">
+                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+            </Border>
 
-                <Label Content="Tvar:" />
-                <ComboBox x:Name="ShapePicker" Width="100">
-                    <ComboBoxItem Content="None" IsSelected="True"/>
-                    <ComboBoxItem Content="Rectangle"/>
-                    <ComboBoxItem Content="Square"/>
-                    <ComboBoxItem Content="Ellipse"/>
-                </ComboBox>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsEnabled"
+                         Value="False">
+                    <Setter Property="Background"
+                            Value="{x:Static SystemColors.ControlLightBrush}" />
+                    <Setter Property="Foreground"
+                            Value="{x:Static SystemColors.GrayTextBrush}" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
 
-                <Button Content="Uložit" Click="SaveButton_Click" Margin="10,0,0,0"/>
-                <Button Content="Načíst" Click="LoadButton_Click" Margin="5,0,0,0"/>
-                <Button Content="Vymazat" Click="ClearButton_Click" Margin="5,0,0,0"/>
-            </StackPanel>
+        <!-- Styl tlačítek ve stylu Windows 11 -->
+        <Style x:Key="Win11ButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="#CCC" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="Margin" Value="5,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                SnapsToDevicePixels="True"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#0078D7" />
+                    <Setter Property="Foreground" Value="White" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#0078D7" />
+                    <Setter Property="Foreground" Value="White" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="FillColorPick" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="10,0,0,0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                SnapsToDevicePixels="True"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <Style x:Key="BorderColorPick" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="10,0,0,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="5"
+                                CornerRadius="6"
+                                SnapsToDevicePixels="True"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-            <!-- Plátno -->
-            <InkCanvas 
-                x:Name="DrawingCanvas" 
+        <Style x:Key="Win11ComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="#333" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="#393939" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="6,3" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton
+                                Name="ToggleButton"
+                                Background="Transparent"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="0"
+                                IsChecked="{Binding Path=IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}"
+                                ClickMode="Press"
+                                Focusable="False"
+                                Foreground="White"
+                                Template="{StaticResource NoMouseOverButtonTemplate}">
+                                <Border CornerRadius="6"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}">
+                                    <Grid>
+                                        <ContentPresenter Margin="6,2,25,2"
+                                                          HorizontalAlignment="Left"
+                                                          VerticalAlignment="Center"
+                                                          Content="{TemplateBinding SelectionBoxItem}" />
+                                        <Path x:Name="Arrow"
+                                              Data="M 0 0 L 4 4 L 8 0 Z"
+                                              Fill="#333"
+                                              Width="8"
+                                              Height="4"
+                                              HorizontalAlignment="Right"
+                                              VerticalAlignment="Center"
+                                              Margin="0,0,10,0" />
+                                    </Grid>
+                                </Border>
+                            </ToggleButton>
+                            <Popup Name="Popup"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Slide">
+                                <!-- Přidáno obalení transparentním Borderem, aby nebyl vidět obdélník za popupem -->
+                                <Border Background="Transparent" Padding="0">
+                                    <Border CornerRadius="6"
+                                            Background="White"
+                                            BorderBrush="#CCC"
+                                            BorderThickness="1"
+                                            SnapsToDevicePixels="True"
+                                            MaxHeight="200">
+                                        <ScrollViewer Margin="4,6">
+                                            <StackPanel IsItemsHost="True" />
+                                        </ScrollViewer>
+                                    </Border>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="Gray" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+
+        </Style>
+
+        <!-- Styl Slideru -->
+        <Style x:Key="Win11SliderStyle" TargetType="Slider">
+            <Setter Property="Minimum" Value="0" />
+            <Setter Property="Maximum" Value="10" />
+            <Setter Property="Value" Value="5" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid Height="24">
+                            <Track Name="PART_Track"
+                                   VerticalAlignment="Center"
+                                   IsDirectionReversed="False">
+                                <!-- Modrá barva pro sníženou část -->
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Style="{x:Null}"
+                                                  Background="#0078D7"
+                                                  BorderThickness="0"
+                                                  Height="4"
+                                                  IsTabStop="False" />
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Width="16" Height="16"
+                                           Background="#0078D7"
+                                           BorderThickness="0">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderThickness="0"
+                                                        CornerRadius="8" />
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <!-- Světlejší modrá pro zvýšenou část -->
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Style="{x:Null}"
+                                                  Background="#C6E0FF"
+                                                  BorderThickness="0"
+                                                  Height="4"
+                                                  IsTabStop="False" />
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
+    <Grid Background="#202020">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="20"/>
+        </Grid.RowDefinitions>
+
+        <Border
+                Background="#272727"
+                CornerRadius="6"
+                BorderThickness="0"
+                Margin="10"
+                Padding="5"
+                Grid.Row="0"
+                >
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Levá část: tlačítka -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Grid.Column="0">
+                    <Button Content="Uložit" Click="Save" Style="{StaticResource Win11ButtonStyle}"/>
+                    <Button Content="Načíst" Click="Load" Margin="5,0,0,0" Style="{StaticResource Win11ButtonStyle}" />
+                    <Button Content="Vymazat" Click="Clear" Margin="5,0,0,0" Style="{StaticResource Win11ButtonStyle}" />
+                </StackPanel>
+
+                <!-- Pravá část: barva, tloušťka, tvar -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Grid.Column="1">
+                    <!-- Tvar -->
+                    <Label Content="Tvar" Foreground="White" VerticalAlignment="Center" />
+                    <ComboBox x:Name="ShapePicker"
+                              Margin="5,0,10,0"
+                              VerticalAlignment="Center"
+                              Style="{StaticResource Win11ComboBoxStyle}"/>
+
+                    <!-- Tloušťka -->
+                    <Label Content="Tloušťka" Foreground="White" Margin="15,0,0,0" VerticalAlignment="Center" />
+                    <Slider x:Name="BrushSizeSlider"
+                            Minimum="5"
+                            Maximum="20"
+                            Width="100"
+                            Margin="5,0,10,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource Win11SliderStyle}" />
+
+                    <!-- Barva -->
+                    <Button x:Name="TransparentFillButton"
+                            Width="24"
+                            Height="24"
+                            ToolTip="Žádná výplň"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="SetTransparentFill"
+                            Margin="0,-2,0,0"
+                            Style="{StaticResource Win11ButtonStyle}"
+                            Template="{StaticResource NoMouseOverButtonTemplate}">
+                        <TextBlock x:Name="TransparentFillIcon"
+                                   Text="⛶"
+                                   FontSize="28"
+                                   FontFamily="Segoe UI Symbol"
+                                   Foreground="White"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center" />
+                    </Button>              
+                    <Button x:Name="FillColorButton" Content="" Width="24" Height="24" Style="{StaticResource FillColorPick}" Click="OpenColorPicker" />
+                    <Button x:Name="BorderColorButton" Content="" Width="24" Height="24" Style="{StaticResource BorderColorPick}" Click="OpenColorPicker" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Plátno -->
+        <Border
+            BorderThickness="1"
+            BorderBrush="#272727"
+            Margin="10"
+            Grid.Row="1"
+            >
+            <InkCanvas
+                x:Name="DrawingCanvas"
                 Background="White"
-                MouseDown="DrawingCanvas_OnMouseDown" 
+                MouseDown="StartDrawing"
+                StrokeCollected="OnDraw"
                 />
-        </DockPanel>
+        </Border>
+
+        <Border Background="#272727"
+                Grid.Row="2"
+                Padding="20,0,20,0">
+            <TextBlock x:Name="SizeLabel" TextWrapping="Wrap" Foreground="White" Text="TextBlock" Height="12" FontSize="10"/>
+        </Border>
     </Grid>
 </Window>
