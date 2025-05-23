@@ -51,6 +51,7 @@ public class DrawShape
         element.StrokeThickness = Settings.thickness;
         element.Visibility = Visibility.Visible;
 
+        // Update the shape's position and size based on the end point
         switch (type)
         {
             case ShapeType.Rectangle:
@@ -89,6 +90,7 @@ public class DrawShape
         double width = Math.Abs(startPoint.X - EndPoint.X);
         double height = Math.Abs(startPoint.Y - EndPoint.Y);
 
+        // Lock the aspect ratio
         if (square)
         {
             double side = Math.Min(width, height);
@@ -104,7 +106,7 @@ public class DrawShape
 
     private void DrawEllipse()
     {
-        DrawRectangle(false); // same logic as rectangle
+        DrawRectangle(false);
     }
 
     private void DrawLine()

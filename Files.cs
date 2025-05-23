@@ -19,6 +19,7 @@ public static class Files
             (int)canvas.ActualHeight, 
             96d, 
             96d, 
+            // Color format
             PixelFormats.Default
         );
         rtb.Render(canvas);
@@ -26,6 +27,7 @@ public static class Files
         PngBitmapEncoder encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(rtb));
 
+        // Make sure to handle the "file is being processed by another process" error
         try
         {
             using FileStream fs = new FileStream(path, FileMode.Create);
@@ -44,6 +46,7 @@ public static class Files
     {
         BitmapImage bitmap = new BitmapImage();
 
+        // Open and close the file to prevent the "file is being processed by another process" error
         using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
         {
             bitmap.BeginInit();
@@ -56,6 +59,7 @@ public static class Files
         Image img = new()
         {
             Source = bitmap,
+            // Cut the image to fit the canvas
             Width = canvas.ActualWidth,
             Height = canvas.ActualHeight
         };
@@ -68,8 +72,8 @@ public static class Files
     
     public static void Clear(InkCanvas canvas)
     {
-        canvas.Strokes.Clear();
-        canvas.Children.Clear();
+        canvas.Strokes.Clear(); // Clear the drawings
+        canvas.Children.Clear(); // Clear the shapes
         
         Saved = true;
     }

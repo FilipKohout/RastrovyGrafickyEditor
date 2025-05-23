@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         Title="MainWindow" Height="450" Width="900">
-
+    
     <Window.Resources>
         <ControlTemplate x:Key="NoMouseOverButtonTemplate"
                          TargetType="ButtonBase">
@@ -29,8 +29,7 @@
             </ControlTemplate.Triggers>
         </ControlTemplate>
 
-        <!-- Styl tlačítek ve stylu Windows 11 -->
-        <Style x:Key="Win11ButtonStyle" TargetType="Button">
+        <Style x:Key="BasicButtonStyle" TargetType="Button">
             <Setter Property="Foreground" Value="White" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="#CCC" />
@@ -160,7 +159,6 @@
                                    AllowsTransparency="True"
                                    Focusable="False"
                                    PopupAnimation="Slide">
-                                <!-- Přidáno obalení transparentním Borderem, aby nebyl vidět obdélník za popupem -->
                                 <Border Background="Transparent" Padding="0">
                                     <Border CornerRadius="6"
                                             Background="White"
@@ -186,7 +184,6 @@
 
         </Style>
 
-        <!-- Styl Slideru -->
         <Style x:Key="Win11SliderStyle" TargetType="Slider">
             <Setter Property="Minimum" Value="0" />
             <Setter Property="Maximum" Value="10" />
@@ -198,7 +195,6 @@
                             <Track Name="PART_Track"
                                    VerticalAlignment="Center"
                                    IsDirectionReversed="False">
-                                <!-- Modrá barva pro sníženou část -->
                                 <Track.DecreaseRepeatButton>
                                     <RepeatButton Style="{x:Null}"
                                                   Background="#0078D7"
@@ -219,7 +215,6 @@
                                         </Thumb.Template>
                                     </Thumb>
                                 </Track.Thumb>
-                                <!-- Světlejší modrá pro zvýšenou část -->
                                 <Track.IncreaseRepeatButton>
                                     <RepeatButton Style="{x:Null}"
                                                   Background="#C6E0FF"
@@ -257,26 +252,23 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Levá část: tlačítka -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Grid.Column="0">
-                    <Button Content="Uložit" Click="Save" Style="{StaticResource Win11ButtonStyle}"/>
-                    <Button Content="Načíst" Click="Load" Margin="5,0,0,0" Style="{StaticResource Win11ButtonStyle}" />
-                    <Button Content="Vymazat" Click="Clear" Margin="5,0,0,0" Style="{StaticResource Win11ButtonStyle}" />
+                    <Button Content="Uložit" Click="Save" Style="{StaticResource BasicButtonStyle}"/>
+                    <Button Content="Načíst" Click="Load" Margin="5,0,0,0" Style="{StaticResource BasicButtonStyle}" />
+                    <Button Content="Vymazat" Click="Clear" Margin="5,0,0,0" Style="{StaticResource BasicButtonStyle}" />
                 </StackPanel>
 
-                <!-- Pravá část: barva, tloušťka, tvar -->
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Grid.Column="1">
-                    <!-- Tvar -->
+
                     <Label Content="Tvar" Foreground="White" VerticalAlignment="Center" />
                     <ComboBox x:Name="ShapePicker"
                               Margin="5,0,10,0"
                               VerticalAlignment="Center"
                               Style="{StaticResource Win11ComboBoxStyle}"/>
 
-                    <!-- Tloušťka -->
                     <Label Content="Tloušťka" Foreground="White" Margin="15,0,0,0" VerticalAlignment="Center" />
                     <Slider x:Name="BrushSizeSlider"
                             Minimum="5"
@@ -286,7 +278,6 @@
                             VerticalAlignment="Center"
                             Style="{StaticResource Win11SliderStyle}" />
 
-                    <!-- Barva -->
                     <Button x:Name="TransparentFillButton"
                             Width="24"
                             Height="24"
@@ -295,7 +286,7 @@
                             BorderThickness="0"
                             Click="SetTransparentFill"
                             Margin="0,-2,0,0"
-                            Style="{StaticResource Win11ButtonStyle}"
+                            Style="{StaticResource BasicButtonStyle}"
                             Template="{StaticResource NoMouseOverButtonTemplate}">
                         <TextBlock x:Name="TransparentFillIcon"
                                    Text="⛶"
@@ -312,7 +303,6 @@
             </Grid>
         </Border>
 
-        <!-- Plátno -->
         <Border
             BorderThickness="1"
             BorderBrush="#272727"

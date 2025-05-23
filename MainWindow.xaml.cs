@@ -10,16 +10,13 @@ using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 namespace RastrovyGrafickyEditor;
 
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
 public partial class MainWindow : Window
 {
     public MainWindow()
     {
         InitializeComponent();
         
-        // Init shapes
+        // Init shapes dropdown
         ShapePicker.Items.Add(new ComboBoxItem { Content = "None", IsSelected = true});
         foreach (var type in ShapeType.GetValues(typeof(ShapeType)))
             ShapePicker.Items.Add(new ComboBoxItem { Content = type.ToString() });
@@ -27,7 +24,7 @@ public partial class MainWindow : Window
         DrawingCanvas.DefaultDrawingAttributes.Width = Settings.thickness;
         DrawingCanvas.DefaultDrawingAttributes.Height = Settings.thickness;
         BrushSizeSlider.Value = Settings.thickness;
-
+        
         DrawingCanvas.DefaultDrawingAttributes.Color = Settings.borderColor;
         BorderColorButton.BorderBrush = new SolidColorBrush(Settings.borderColor);
         FillColorButton.Background = new SolidColorBrush(Settings.fillColor);
@@ -77,8 +74,9 @@ public partial class MainWindow : Window
 
     private void StartDrawing(object sender, MouseButtonEventArgs e)
     {
-        string shape = (ShapePicker.SelectedItem as ComboBoxItem)?.Content.ToString();
-        if (shape != "None")
+        string? shape = (ShapePicker.SelectedItem as ComboBoxItem)?.Content.ToString();
+        
+        if (shape != "None" && shape != null)
         {
             Settings.currentShape = new DrawShape(
                 (ShapeType)Enum.Parse(typeof(ShapeType), shape!), 
@@ -86,17 +84,21 @@ public partial class MainWindow : Window
                 e.GetPosition(DrawingCanvas)
             );
             
-            void MouseMove(object sender, MouseEventArgs e)
+            void MouseMove(object _sender, MouseEventArgs _e)
             {
+                if (Settings.currentShape == null) return;
+                
+                // Redraw the shape based on the end point
                 Settings.currentShape.EndPoint = e.GetPosition(DrawingCanvas);
                 Settings.currentShape.Draw();
             }
             
-            void MouseUp(object sender, MouseButtonEventArgs e)
+            void MouseUp(object _sender, MouseButtonEventArgs _e)
             {
                 DrawingCanvas.MouseMove -= MouseMove;
                 DrawingCanvas.MouseUp -= MouseUp;
-
+                
+                if (Settings.currentShape == null) return;
                 Settings.currentShape.EndPoint = e.GetPosition(DrawingCanvas);
                 Settings.currentShape.Draw();
                 
@@ -124,6 +126,7 @@ public partial class MainWindow : Window
 
     private void Load(object sender, RoutedEventArgs e)
     {
+        // Check for unsaved changes
         if (!Files.Saved)
         {
             DialogResult result = Forms.MessageBox.Show(
