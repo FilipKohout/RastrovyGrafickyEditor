@@ -16,4 +16,4 @@ public static class Settings
     public static double thickness = 5;
     public static DrawingMode drawingMode = DrawingMode.None;
     public static DrawShape? currentShape;
-}
+}    
