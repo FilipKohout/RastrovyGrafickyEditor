@@ -1,5 +1,5 @@
 ﻿# Dokumentace Rastrový Grafický Editor
-RastrovyGrafickyEditor je rastrový grafický editor vytvořený v C# a WPF.
+Projekt vytvořený v C# a WPF.
 
 ---
 
